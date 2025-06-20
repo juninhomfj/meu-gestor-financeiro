@@ -1,0 +1,81 @@
+<!-- relatorios.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatórios Financeiros</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+  <div class="flex min-h-screen">
+    <div id="menu-container" class="shrink-0"></div>
+
+    <main class="flex-1 p-6 flex flex-col">
+      <div id="header-container"></div>
+
+      <div class="flex-1 container mx-auto">
+        <h1 class="text-2xl font-bold mb-4">📊 Relatórios Financeiros</h1>
+
+        <!-- Filtros -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+          <h2 class="text-lg font-semibold mb-3">Filtros</h2>
+          <form id="form-filtros" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label for="filtro-tipo" class="block text-sm font-medium mb-1">Tipo</label>
+              <select id="filtro-tipo" class="w-full border rounded px-2 py-1">
+                <option value="">Todos</option>
+                <option value="receita">Receitas</option>
+                <option value="despesa">Despesas</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="filtro-conta" class="block text-sm font-medium mb-1">Conta</label>
+              <select id="filtro-conta" class="w-full border rounded px-2 py-1"></select>
+            </div>
+
+            <div>
+              <label for="filtro-data-inicio" class="block text-sm font-medium mb-1">De</label>
+              <input type="date" id="filtro-data-inicio" class="w-full border rounded px-2 py-1" />
+            </div>
+
+            <div>
+              <label for="filtro-data-fim" class="block text-sm font-medium mb-1">Até</label>
+              <input type="date" id="filtro-data-fim" class="w-full border rounded px-2 py-1" />
+            </div>
+
+            <div class="md:col-span-4 text-right">
+              <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded">🔎 Filtrar</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tabela de resultados -->
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="text-lg font-semibold mb-4">Resultados</h2>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b">
+                <th class="py-2">Data</th>
+                <th>Descrição</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Conta</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-relatorios"></tbody>
+          </table>
+          <div id="total-relatorio" class="mt-4 font-bold text-blue-700"></div>
+        </div>
+      </div>
+
+      <div id="footer-container"></div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/includes.js"></script>
+  <script type="module" src="assets/js/relatorios.js"></script>
+</body>
+</html>

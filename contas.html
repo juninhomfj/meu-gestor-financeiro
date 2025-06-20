@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contas - Meu Gestor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+
+  <div class="flex min-h-screen">
+    <div id="menu-container" class="shrink-0"></div>
+
+    <main class="flex-1 p-6 flex flex-col">
+      <div id="header-container"></div>
+
+      <div class="flex-1">
+        <h1 class="text-2xl font-bold text-blue-700 mb-2">💳 Contas e Carteiras</h1>
+        <p class="text-sm text-gray-500 mb-6">Gerencie suas fontes de entrada e saída</p>
+
+        <!-- Formulário de adicionar/editar conta -->
+        <section class="bg-white rounded-xl shadow p-4 mb-8">
+          <h2 class="text-lg font-semibold mb-4">➕ Adicionar Conta/Carteira</h2>
+          <form id="form-conta" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="nome-conta" class="block text-sm font-medium mb-1">Nome da Conta</label>
+              <input type="text" id="nome-conta" class="w-full border rounded p-2" required />
+            </div>
+            <div>
+              <label for="titularidade" class="block text-sm font-medium mb-1">Titularidade</label>
+              <select id="titularidade" class="w-full border rounded p-2" required>
+                <option value="">Selecione</option>
+                <option value="pf">Pessoa Física</option>
+                <option value="pj">Pessoa Jurídica</option>
+              </select>
+            </div>
+            <div>
+              <label for="tipo-conta" class="block text-sm font-medium mb-1">Tipo</label>
+              <select id="tipo-conta" class="w-full border rounded p-2" required>
+                <option value="">Selecione</option>
+                <option value="Banco">Banco</option>
+                <option value="Cartão de crédito">Cartão de crédito</option>
+                <option value="Carteira">Carteira</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="md:col-span-2 text-right mt-4">
+              <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded">
+                💾 Salvar Conta
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Filtros e busca -->
+        <section class="bg-white rounded-xl shadow p-4">
+          <h2 class="text-lg font-semibold mb-4">📋 Contas Cadastradas</h2>
+          <div class="flex gap-2 mb-4">
+            <select id="filtro-tipo-conta" class="border rounded px-2 py-1">
+              <option value="">Todos</option>
+              <option value="pf">Pessoa Física</option>
+              <option value="pj">Pessoa Jurídica</option>
+            </select>
+            <input id="busca-conta" type="text" placeholder="Buscar por nome..." class="border rounded px-2 py-1" />
+            <span id="total-contas" class="ml-auto text-sm text-gray-600"></span>
+          </div>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b">
+                <th class="py-2">Nome</th>
+                <th>Titularidade</th>
+                <th>Tipo</th>
+                <th>Criado em</th>
+                <th>Saldo Atual</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-contas">
+              <!-- Itens serão adicionados via JavaScript -->
+            </tbody>
+          </table>
+          <span id="total-saldo" class="block mt-2 font-bold text-blue-700"></span>
+        </section>
+      </div>
+
+      <div id="footer-container"></div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/includes.js"></script>
+  <script type="module" src="assets/js/contas.js"></script>
+</body>
+</html>
