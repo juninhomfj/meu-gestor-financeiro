@@ -4,6 +4,9 @@ import {
 } from "./firebase.js";
 import { criarEventoGoogleAgenda, removerEventoGoogleAgenda } from "./google.js";
 
+let graficoCategorias = null;
+let graficoMensal = null;
+
 // Elementos globais
 const modal = document.getElementById("modal-lancamento");
 const btnAbrirModal = document.getElementById("btn-abrir-modal");
@@ -140,42 +143,6 @@ async function carregarCategorias(tipoLancamento = null) {
   });
 }
 
-// Adicionar nova conta com tipo (PF ou PJ)
-async function adicionarConta() {
-  const nomeConta = prompt("Digite o nome da nova conta:");
-  if (!nomeConta || !nomeConta.trim()) return;
-
-  let tipoConta = prompt("Digite o tipo da conta:\n1 - Pessoa Física (PF)\n2 - Pessoa Jurídica (PJ)");
-  if (!tipoConta) return;
-
-  tipoConta = tipoConta.trim();
-  if (tipoConta !== "1" && tipoConta !== "2") {
-    alert("Tipo inválido. Use 1 para PF ou 2 para PJ.");
-    return;
-  }
-
-  const tipo = tipoConta === "1" ? "pf" : "pj";
-
-  await addDoc(collection(db, "contas"), {
-    nome: nomeConta.trim(),
-    tipo: tipo,
-    criadoEm: new Date().toISOString()
-  });
-
-  carregarContas();
-  selectConta.value = nomeConta.trim();
-}
-
-// Adicionar nova categoria
-async function adicionarCategoria() {
-  const nomeCategoria = prompt("Digite o nome da nova categoria:");
-  if (nomeCategoria && nomeCategoria.trim()) {
-    await addDoc(collection(db, "categorias"), { nome: nomeCategoria.trim(), criadoEm: new Date().toISOString() });
-    carregarCategorias();
-    selectCategoria.value = nomeCategoria.trim();
-  }
-}
-
 // Carregar lançamentos com botão editar e excluir
 async function carregarLancamentos() {
   listaLancamentosEl.innerHTML = "";
@@ -187,6 +154,7 @@ async function carregarLancamentos() {
     if (snapshot.empty) {
       listaLancamentosEl.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">Nenhum lançamento encontrado.</td></tr>`;
       atualizarCards([]);
+      gerarGraficos([]);
       return;
     }
 
@@ -204,6 +172,7 @@ async function carregarLancamentos() {
     });
 
     atualizarCards(lancamentos);
+    gerarGraficos(lancamentos);
 
     listaLancamentosEl.innerHTML = "";
 
@@ -486,17 +455,102 @@ btnAbrirModal.addEventListener("click", abrirModal);
 btnFecharModal.addEventListener("click", fecharModal);
 btnCancelar.addEventListener("click", fecharModal);
 
-btnAddConta.addEventListener("click", adicionarConta);
-btnAddCategoria.addEventListener("click", () => {
-  // Seta o tipo padrão conforme o tipo selecionado no lançamento
-  tipoModalCategoria.value = tipoCategoriaInput ? tipoCategoriaInput.value : "ambos";
-  nomeModalCategoria.value = "";
-  modalCategoria.classList.remove("hidden");
-  nomeModalCategoria.focus();
+// ===== MODAL DE NOVA CONTA =====
+
+const modalNovaConta = document.getElementById("modal-nova-conta");
+const formNovaConta = document.getElementById("form-nova-conta");
+const btnCancelarConta = document.querySelector(".btn-cancelar-conta");
+const inputNomeConta = document.getElementById("nova-conta-nome");
+const selectTipoConta = document.getElementById("nova-conta-tipo");
+
+// Abrir modal de conta
+btnAddConta.addEventListener("click", () => {
+  inputNomeConta.value = "";
+  selectTipoConta.value = "";
+  modalNovaConta.classList.remove("hidden");
+  inputNomeConta.focus();
 });
 
-btnCancelarModalCategoria.addEventListener("click", () => {
-  modalCategoria.classList.add("hidden");
+// Cancelar modal de conta
+btnCancelarConta.addEventListener("click", () => {
+  modalNovaConta.classList.add("hidden");
+});
+
+// Submeter nova conta
+formNovaConta.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const nome = inputNomeConta.value.trim();
+  const tipo = selectTipoConta.value;
+
+  if (!nome || !tipo) {
+    alert("Preencha todos os campos.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "contas"), {
+      nome,
+      tipo,
+      criadoEm: new Date().toISOString()
+    });
+
+    alert("Conta criada com sucesso!");
+    modalNovaConta.classList.add("hidden");
+    await carregarContas(); // Atualiza o select no formulário principal
+    selectConta.value = nome; // Deixa a nova conta já selecionada
+  } catch (err) {
+    console.error("Erro ao criar conta:", err);
+    alert("Erro ao salvar a conta.");
+  }
+});
+
+// ===== MODAL DE NOVA CATEGORIA =====
+
+const modalNovaCategoria = document.getElementById("modal-nova-categoria");
+const formNovaCategoria = document.getElementById("form-nova-categoria");
+const inputNomeCategoria = document.getElementById("nova-categoria-nome");
+const btnCancelarCategoria = document.querySelector(".btn-cancelar-categoria");
+
+// Abrir modal
+btnAddCategoria.addEventListener("click", () => {
+  inputNomeCategoria.value = "";
+  modalNovaCategoria.classList.remove("hidden");
+  inputNomeCategoria.focus();
+});
+
+// Cancelar modal
+btnCancelarCategoria.addEventListener("click", () => {
+  modalNovaCategoria.classList.add("hidden");
+});
+
+// Salvar nova categoria
+formNovaCategoria.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const nome = inputNomeCategoria.value.trim();
+  const tipo = tipoCategoriaInput ? tipoCategoriaInput.value : "ambos";
+
+  if (!nome) {
+    alert("Preencha o nome da categoria.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "categorias"), {
+      nome,
+      tipo,
+      criadoEm: new Date().toISOString()
+    });
+
+    alert("Categoria criada com sucesso!");
+    modalNovaCategoria.classList.add("hidden");
+    await carregarCategorias(tipo);
+    selectCategoria.value = nome;
+  } catch (err) {
+    console.error("Erro ao criar categoria:", err);
+    alert("Erro ao salvar a categoria.");
+  }
 });
 
 formModalCategoria.addEventListener("submit", async (e) => {
@@ -539,3 +593,95 @@ function formatarData(dataISO) {
   const d = new Date(dataISO);
   return d.toLocaleDateString("pt-BR");
 }
+
+// Botão WhatsApp para inserir via modelo
+document.getElementById("btn-whatsapp").addEventListener("click", () => {
+  const modelo = encodeURIComponent("DESPESA | 45.90 | 2025-06-21 | Mercado | Alimentação | Pago | Conta PF");
+  window.open(`https://wa.me/?text=${modelo}`, "_blank");
+});
+
+// Botão para upload de XML
+document.getElementById("btn-cupom-xml").addEventListener("click", () => {
+  document.getElementById("xml-upload").click();
+});
+
+document.getElementById("xml-upload").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function () {
+    const xml = new DOMParser().parseFromString(reader.result, "text/xml");
+
+    const emitente = xml.querySelector("emit xNome")?.textContent || "Desconhecido";
+    const total = parseFloat(xml.querySelector("ICMSTot vNF")?.textContent || "0");
+    const data = xml.querySelector("ide dhEmi")?.textContent?.split("T")[0];
+
+    formLancamento.descricao.value = `Compra em ${emitente}`;
+    formLancamento.valor.value = total;
+    formLancamento.data.value = data;
+    formLancamento.tipo.value = "despesa";
+    chkRecorrente.checked = false;
+
+    alert("Dados carregados do cupom fiscal.");
+    abrirModal(); // Abre o modal já preenchido
+  };
+
+  reader.readAsText(file);
+});
+
+// Botão para leitura de QR Code
+document.getElementById("btn-cupom-qr").addEventListener("click", () => {
+  document.getElementById("qr-reader").classList.toggle("hidden");
+  // Aqui você pode inicializar o html5-qrcode se ainda não estiver rodando
+});
+
+// Leitura de XML para NFC-e
+document.getElementById("input-xml-nfce").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(e.target.result, "text/xml");
+
+      const total = xml.querySelector("vNF")?.textContent || "";
+      const data = xml.querySelector("dhEmi")?.textContent || xml.querySelector("dEmi")?.textContent || "";
+      const emitente = xml.querySelector("xNome")?.textContent || "Cupom Fiscal";
+      const produtos = [...xml.querySelectorAll("det")].map(item => {
+        const nome = item.querySelector("xProd")?.textContent;
+        const valor = item.querySelector("vProd")?.textContent;
+        return `${nome} - R$ ${valor}`;
+      });
+
+      // Variáveis para log
+      const descricao = `Compra: ${emitente}`;
+      const valor = total;
+      const conta = ""; // Não extraído do XML
+      const categoria = ""; // Não extraído do XML
+
+      console.log("Conteúdo extraído do XML:", {
+        descricao,
+        valor,
+        data,
+        conta,
+        categoria
+      });
+
+      formLancamento.descricao.value = descricao;
+      formLancamento.valor.value = valor;
+      formLancamento.data.value = data.split("T")[0]; // Formata para yyyy-mm-dd
+      formLancamento.tipo.value = "despesa";
+      formLancamento.status.value = "pendente";
+      document.getElementById("recorrente").checked = false;
+
+      alert("Cupom fiscal carregado com sucesso!");
+    };
+    reader.readAsText(file);
+  } catch (err) {
+    console.error("Erro ao processar XML:", err);
+    alert("Erro ao ler cupom fiscal.");
+  }
+});

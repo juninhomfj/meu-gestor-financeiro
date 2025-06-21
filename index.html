@@ -53,6 +53,15 @@
           </div>
         </div>
 
+        <!-- GRÁFICOS -->
+        <section class="bg-white rounded-xl shadow p-4 mt-6">
+          <h2 class="text-lg font-semibold text-blue-700 mb-4">📊 Visão Geral Gráfica</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <canvas id="grafico-despesas-categorias"></canvas>
+            <canvas id="grafico-receitas-despesas-mensais"></canvas>
+          </div>
+        </section>
+
         <!-- TABELA -->
         <div class="bg-white rounded-xl shadow p-4 mb-6">
           <h3 class="text-lg font-semibold mb-4">Últimos lançamentos</h3>
@@ -77,7 +86,36 @@
           <button id="btn-abrir-modal" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-xl shadow">
             ➕ Novo Lançamento
           </button>
+          <button id="btn-whatsapp" class="bg-green-600 text-white px-4 py-2 rounded">
+            ➕ Inserir via WhatsApp
+          </button>
         </div>
+
+        <!-- Adicione este bloco abaixo da tabela ou onde desejar -->
+        <section class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
+          <!-- Card: Despesas por Categoria -->
+          <div class="bg-white shadow-lg rounded-2xl p-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Despesas por Categoria</h2>
+            <canvas id="grafico-despesas-categorias" height="300"></canvas>
+          </div>
+
+          <!-- Card: Receita vs Despesa Mensal -->
+          <div class="bg-white shadow-lg rounded-2xl p-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Receitas x Despesas (últimos 6 meses)</h2>
+            <canvas id="grafico-receitas-despesas-mensais" height="300"></canvas>
+          </div>
+        </section>
+<div class="text-right">
+  <button id="btn-abrir-modal" ...>➕ Novo Lançamento</button>
+  <button id="btn-whatsapp" ...>➕ Inserir via WhatsApp</button>
+</div>
+        <!-- BOTÕES DE CUPOM FISCAL -->
+        <div class="flex flex-wrap gap-2 justify-end my-4">
+          <input type="file" id="xml-upload" accept=".xml" class="hidden" />
+          <button id="btn-cupom-xml" class="bg-purple-600 text-white px-4 py-2 rounded">📎 Importar Cupom XML</button>
+          <button id="btn-cupom-qr" class="bg-blue-600 text-white px-4 py-2 rounded">📷 Ler Cupom QR</button>
+        </div>
+        <div id="qr-reader" class="hidden"></div>
       </div>
 
       <div id="footer-container"></div>
@@ -174,6 +212,11 @@
           </div>
         </div>
 
+        <div class="mt-2">
+          <label class="block text-sm font-medium text-gray-700">Importar cupom fiscal (XML NFC-e):</label>
+          <input type="file" id="input-xml-nfce" accept=".xml" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+
         <div class="text-right">
           <button type="button" id="btn-cancelar" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
@@ -182,32 +225,50 @@
     </div>
   </div>
 
+  <!-- MODAL: Nova Conta -->
+<div id="modal-nova-conta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md relative">
+    <h2 class="text-xl font-semibold mb-4">Nova Conta</h2>
+    <form id="form-nova-conta" class="space-y-4">
+      <input type="text" id="nova-conta-nome" placeholder="Nome da Conta" class="w-full border rounded px-3 py-2" required />
+      <select id="nova-conta-tipo" class="w-full border rounded px-3 py-2" required>
+        <option value="">Selecione Titularidade</option>
+        <option value="pf">Pessoa Física</option>
+        <option value="pj">Pessoa Jurídica</option>
+      </select>
+      <div class="flex justify-end gap-2 pt-4">
+        <button type="button" class="btn-cancelar-conta bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
   <!-- Modal de Nova Categoria -->
   <div id="modal-categoria" class="modal-bg hidden">
     <div class="modal-content">
-      <h2 class="text-lg font-semibold mb-4">Nova Categoria</h2>
-      <form id="form-modal-categoria" class="space-y-4">
+      <h2>Nova Categoria</h2>
+      <form id="form-modal-categoria">
+        <label for="nome-modal-categoria">Nome da Categoria</label>
+        <input type="text" id="nome-modal-categoria" required />
+        <label for="tipo-modal-categoria">Tipo</label>
+        <select id="tipo-modal-categoria" required>
+          <option value="receita">Receita</option>
+          <option value="despesa">Despesa</option>
+          <option value="ambos">Ambos</option>
+        </select>
         <div>
-          <label for="nome-modal-categoria" class="block text-sm font-medium mb-1">Nome da Categoria</label>
-          <input type="text" id="nome-modal-categoria" class="w-full border rounded p-2" required />
-        </div>
-        <div>
-          <label for="tipo-modal-categoria" class="block text-sm font-medium mb-1">Tipo</label>
-          <select id="tipo-modal-categoria" class="w-full border rounded p-2" required>
-            <option value="receita">Receita</option>
-            <option value="despesa">Despesa</option>
-            <option value="ambos">Ambos</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-2">
-          <button type="button" id="btn-cancelar-modal-categoria" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
+          <button type="button" id="btn-cancelar-modal-categoria">Cancelar</button>
+          <button type="submit">Salvar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Scripts do projeto -->
   <script type="module" src="assets/js/includes.js"></script>
   <script type="module" src="assets/js/dashboard.js"></script>
   <script type="module" src="assets/js/google.js"></script>

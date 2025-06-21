@@ -1,4 +1,14 @@
-import { db, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc, setDoc } from "./firebase.js";
+import {
+  db,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  where,
+  deleteDoc,
+  doc
+} from "./firebase.js";
 
 // Elementos globais
 const corpo = document.getElementById("lista-contas");
@@ -7,59 +17,53 @@ const filtroTipoConta = document.getElementById("filtro-tipo-conta");
 const buscaConta = document.getElementById("busca-conta");
 const totalContasEl = document.getElementById("total-contas");
 
-// Exibir saldo total de todas as contas
 let totalSaldoEl = document.getElementById("total-saldo");
-if (!totalSaldoEl) {
+if (!totalSaldoEl && corpo?.parentElement) {
   totalSaldoEl = document.createElement("span");
   totalSaldoEl.id = "total-saldo";
   totalSaldoEl.className = "block mt-2 font-bold text-blue-700";
-  if (corpo && corpo.parentElement) {
-    corpo.parentElement.insertBefore(totalSaldoEl, corpo.nextSibling);
-  }
+  corpo.parentElement.insertBefore(totalSaldoEl, corpo.nextSibling);
 }
 
-// Carregar contas com saldo, filtro e busca
+// 🔄 Função principal para carregar e exibir as contas
 async function carregarContas() {
   corpo.innerHTML = "";
   let contas = [];
   let saldoTotal = 0;
 
   try {
-    let ref = collection(db, "contas");
-    let q = query(ref, orderBy("criadoEm", "desc"));
+    const ref = collection(db, "contas");
+    const q = query(ref, orderBy("criadoEm", "desc"));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
       corpo.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhuma conta cadastrada.</td></tr>';
-      if (totalContasEl) totalContasEl.textContent = "Total de contas: 0";
-      if (totalSaldoEl) totalSaldoEl.textContent = "Saldo total: R$ 0,00";
+      totalContasEl.textContent = "Total de contas: 0";
+      totalSaldoEl.textContent = "Saldo total: R$ 0,00";
       return;
     }
 
-    // Filtro por tipo
     snapshot.forEach(docSnap => {
       const c = docSnap.data();
       c.id = docSnap.id;
       contas.push(c);
     });
 
-    // Filtro por tipo de conta (PF/PJ)
-    const tipoFiltro = filtroTipoConta ? filtroTipoConta.value : "";
+    // Aplica filtro PF/PJ
+    const tipoFiltro = filtroTipoConta?.value || "";
     if (tipoFiltro) {
-      contas = contas.filter(c => (c.titularidade || "").toLowerCase() === tipoFiltro);
+      contas = contas.filter(c => (c.tipo || "").toLowerCase() === tipoFiltro);
     }
 
     // Busca por nome
-    const termoBusca = buscaConta ? buscaConta.value.trim().toLowerCase() : "";
+    const termoBusca = buscaConta?.value.trim().toLowerCase() || "";
     if (termoBusca) {
       contas = contas.filter(c => c.nome.toLowerCase().includes(termoBusca));
     }
 
-    if (totalContasEl) totalContasEl.textContent = `Total de contas: ${contas.length}`;
+    totalContasEl.textContent = `Total de contas: ${contas.length}`;
 
-    // Exibir cada conta com saldo, botão de excluir e editar
     for (const c of contas) {
-      // Buscar lançamentos efetivados (status "pago" ou "recebido") vinculados a esta conta
       const lancSnapshot = await getDocs(
         query(
           collection(db, "lancamentos"),
@@ -71,8 +75,7 @@ async function carregarContas() {
       let saldo = 0;
       lancSnapshot.forEach(lanc => {
         const l = lanc.data();
-        if (l.tipo === "receita") saldo += l.valor;
-        else if (l.tipo === "despesa") saldo -= l.valor;
+        saldo += l.tipo === "receita" ? l.valor : -l.valor;
       });
 
       saldoTotal += saldo;
@@ -81,12 +84,16 @@ async function carregarContas() {
         ? new Date(c.criadoEm).toLocaleDateString("pt-BR", { timeZone: "UTC" })
         : "-";
 
+      const tipoFormatado = c.tipo === "pf" ? "Pessoa Física"
+                          : c.tipo === "pj" ? "Pessoa Jurídica"
+                          : "—";
+
       const tr = document.createElement("tr");
       tr.classList.add("border-b");
       tr.innerHTML = `
         <td class="py-2">${c.nome}</td>
-        <td>${c.titularidade || "—"}</td>
-        <td>${c.tipo || "—"}</td>
+        <td>${tipoFormatado}</td>
+        <td>${c.tipoConta || "—"}</td>
         <td>${dataCriado}</td>
         <td class="${saldo < 0 ? "text-red-600" : "text-green-600"} font-semibold">R$ ${saldo.toFixed(2)}</td>
         <td>
@@ -97,36 +104,32 @@ async function carregarContas() {
       corpo.appendChild(tr);
     }
 
-    // Atualiza saldo total
-    if (totalSaldoEl) totalSaldoEl.textContent = `Saldo total: R$ ${saldoTotal.toFixed(2)}`;
+    totalSaldoEl.textContent = `Saldo total: R$ ${saldoTotal.toFixed(2)}`;
 
-    // Eventos de exclusão
+    // Botão excluir
     corpo.querySelectorAll(".btn-excluir").forEach(btn => {
       btn.addEventListener("click", async () => {
-        // Verifica se há lançamentos vinculados
-        const lancSnapshot = await getDocs(query(collection(db, "lancamentos"), where("conta", "==", btn.dataset.nome)));
-        if (!lancSnapshot.empty) {
-          alert("Não é possível excluir: existem lançamentos vinculados a esta conta.");
-          return;
+        const vinculos = await getDocs(query(collection(db, "lancamentos"), where("conta", "==", btn.dataset.nome)));
+        if (!vinculos.empty) {
+          return alert("Não é possível excluir: há lançamentos vinculados.");
         }
-        if (confirm("Deseja realmente excluir esta conta?")) {
+        if (confirm("Deseja excluir esta conta?")) {
           await deleteDoc(doc(db, "contas", btn.dataset.id));
           carregarContas();
         }
       });
     });
 
-    // Eventos de edição
+    // Botão editar
     corpo.querySelectorAll(".btn-editar").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const contaId = btn.dataset.id;
-        const contaSnap = await getDocs(query(collection(db, "contas"), where("__name__", "==", contaId)));
+        const contaSnap = await getDocs(query(collection(db, "contas"), where("__name__", "==", btn.dataset.id)));
         if (!contaSnap.empty) {
           const c = contaSnap.docs[0].data();
           document.getElementById("nome-conta").value = c.nome;
-          document.getElementById("titularidade").value = c.titularidade || "";
-          document.getElementById("tipo-conta").value = c.tipo || "";
-          formConta.setAttribute("data-edit-id", contaId);
+          document.getElementById("titularidade").value = c.tipo || "";
+          document.getElementById("tipo-conta").value = c.tipoConta || "";
+          formConta.setAttribute("data-edit-id", btn.dataset.id);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       });
@@ -137,33 +140,29 @@ async function carregarContas() {
   }
 }
 
-// Submissão do formulário de conta (adicionar ou editar)
+// 📥 Salvar conta (nova ou edição)
 formConta.addEventListener("submit", async function (e) {
   e.preventDefault();
 
   const nome = document.getElementById("nome-conta").value.trim();
-  const titularidade = document.getElementById("titularidade").value;
-  const tipo = document.getElementById("tipo-conta").value;
-  const editId = formConta.getAttribute("data-edit-id");
-
-  if (!nome || !titularidade || !tipo) return alert("Preencha todos os campos.");
+  const tipo = document.getElementById("titularidade").value;
+  const tipoConta = document.getElementById("tipo-conta").value;
 
   const novaConta = {
     nome,
-    titularidade,
     tipo,
+    tipoConta,
     criadoEm: new Date().toISOString()
   };
 
   try {
+    const editId = formConta.getAttribute("data-edit-id");
     if (editId) {
-      // Atualizar conta existente
       await deleteDoc(doc(db, "contas", editId));
       await addDoc(collection(db, "contas"), novaConta);
       alert("Conta atualizada com sucesso!");
       formConta.removeAttribute("data-edit-id");
     } else {
-      // Nova conta
       await addDoc(collection(db, "contas"), novaConta);
       alert("Conta salva com sucesso!");
     }
@@ -171,16 +170,12 @@ formConta.addEventListener("submit", async function (e) {
     carregarContas();
   } catch (err) {
     console.error("Erro ao salvar conta:", err);
-    alert("Erro ao salvar. Veja o console.");
+    alert("Erro ao salvar conta.");
   }
 });
 
-// Filtro por tipo de conta
-if (filtroTipoConta) {
-  filtroTipoConta.addEventListener("change", carregarContas);
-}
-
-// Busca por nome
+// 🎯 Filtros
+if (filtroTipoConta) filtroTipoConta.addEventListener("change", carregarContas);
 if (buscaConta) {
   buscaConta.addEventListener("input", () => {
     clearTimeout(buscaConta._debounce);
@@ -188,14 +183,9 @@ if (buscaConta) {
   });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  carregarContas();
-  carregarCategorias(); // ← aqui carregamos as categorias também
-});
-
-// ------------------------------
-// GERENCIAMENTO DE CATEGORIAS
-// ------------------------------
+// ----------------------------------
+// CATEGORIAS
+// ----------------------------------
 
 const formCategoria = document.getElementById("form-categoria");
 const listaCategorias = document.getElementById("lista-categorias");
@@ -203,7 +193,6 @@ const listaCategorias = document.getElementById("lista-categorias");
 async function carregarCategorias() {
   listaCategorias.innerHTML = "";
   const snapshot = await getDocs(collection(db, "categorias"));
-
   snapshot.forEach(docSnap => {
     const c = docSnap.data();
     const tr = document.createElement("tr");
@@ -231,9 +220,7 @@ formCategoria.addEventListener("submit", async function (e) {
   e.preventDefault();
   const nome = document.getElementById("nome-categoria").value.trim();
   const tipo = document.getElementById("tipo-categoria").value;
-
   if (!nome || !tipo) return alert("Preencha todos os campos!");
-
   try {
     await addDoc(collection(db, "categorias"), {
       nome,
@@ -249,7 +236,15 @@ formCategoria.addEventListener("submit", async function (e) {
   }
 });
 
-// Preencher categorias no formulário de lançamento
+// 🚀 Inicialização
+window.addEventListener("DOMContentLoaded", () => {
+  carregarContas();
+  carregarCategorias();
+  const selectCategoria = document.getElementById("categoria-lancamento");
+  if (selectCategoria) preencherCategorias(selectCategoria);
+});
+
+// Utilitário para preencher categorias em selects (se quiser usar fora)
 async function preencherCategorias(selectCategoria) {
   const snapshot = await getDocs(collection(db, "categorias"));
   selectCategoria.innerHTML = '<option value="">Selecione</option>';
@@ -261,13 +256,3 @@ async function preencherCategorias(selectCategoria) {
     selectCategoria.appendChild(option);
   });
 }
-
-// Chamar preencherCategorias onde necessário, por exemplo, ao abrir o formulário de lançamento
-window.addEventListener("DOMContentLoaded", () => {
-  carregarContas();
-  carregarCategorias();
-  const selectCategoria = document.getElementById("categoria-lancamento");
-  if (selectCategoria) {
-    preencherCategorias(selectCategoria);
-  }
-});
