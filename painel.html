@@ -7,13 +7,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js para gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
   <div class="flex min-h-screen">
     <div id="menu-container" class="shrink-0"></div>
 
     <main class="flex-1 p-6 flex flex-col">
-      <div id="header-container"></div>
+      <div id="header-container">
+        <!-- Adicione onde desejar, por exemplo, no header -->
+        
+      </div>
 
       <div class="flex-1 container mx-auto">
         <h1 class="text-2xl font-bold mb-6">Painel Financeiro</h1>
@@ -63,5 +67,45 @@
 
   <script type="module" src="assets/js/includes.js"></script>
   <script type="module" src="assets/js/painel.js"></script>
+  <script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+
+  // Atualiza ícone/texto do botão
+  const icon = document.getElementById('icon-theme');
+  const label = document.getElementById('label-theme');
+  if (icon && label) {
+    if (theme === 'dark') {
+      icon.textContent = '☀️';
+      label.textContent = 'Modo Claro';
+    } else {
+      icon.textContent = '🌙';
+      label.textContent = 'Modo Escuro';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const btnToggle = document.getElementById('btn-toggle-theme');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      const current = localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
+      setTheme(current);
+    });
+  }
+
+  // Inicialização ao abrir a página
+  const saved = localStorage.getItem('theme') || 'light';
+  setTheme(saved);
+
+  // Sincronizar tema entre abas
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme') {
+      setTheme(e.newValue);
+    }
+  });
+});
+</script>
 </body>
 </html>

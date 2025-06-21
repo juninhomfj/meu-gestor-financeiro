@@ -1,0 +1,60 @@
+:root {
+  --bg: #f9fafb;
+  --text: #222;
+  --primary: #2563eb;
+  --card: #fff;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  --menu-bg: #1e3a8a;
+  --footer-bg: #1e3a8a;
+}
+
+[data-theme="dark"] {
+  --bg: #18181b;
+  --text: #f4f4f5;
+  --primary: #60a5fa;
+  --card: #23232b;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  --menu-bg: #0f172a;
+  --footer-bg: #0f172a;
+}
+
+[data-theme="darkblue"] {
+  --bg: #10172a;
+  --text: #e0e7ef;
+  --primary: #2563eb;
+  --card: #1e293b;
+  --card-shadow: 0 2px 8px rgba(30,58,138,0.25);
+  --menu-bg: #172554;
+  --footer-bg: #172554;
+}
+
+body {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  transition: background 0.2s, color 0.2s;
+}
+
+.card, .bg-white {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  box-shadow: var(--card-shadow);
+}
+
+header,
+#header-container header {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--primary) !important;
+}
+
+aside,
+#menu-container aside {
+  background: var(--menu-bg) !important;
+  color: var(--text) !important;
+}
+
+footer,
+#footer-container footer {
+  background: var(--footer-bg) !important;
+  color: var(--text) !important;
+}

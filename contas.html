@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contas - Meu Gestor</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
 
@@ -120,6 +121,30 @@
             </tbody>
           </table>
         </section>
+
+        <!-- Exemplo de modal de cadastro de conta -->
+        <div id="modal-nova-conta" class="modal-bg z-50">
+          <div class="modal-content w-full max-w-md relative">
+            <button type="button" class="absolute top-2 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold" onclick="document.getElementById('modal-nova-conta').classList.remove('show')">&times;</button>
+            <h2>Nova Conta</h2>
+            <form id="form-nova-conta">
+              <label for="nova-conta-nome">Nome da Conta</label>
+              <input type="text" id="nova-conta-nome" required />
+
+              <label for="nova-conta-tipo">Titularidade</label>
+              <select id="nova-conta-tipo" required>
+                <option value="">Selecione</option>
+                <option value="pf">Pessoa Física</option>
+                <option value="pj">Pessoa Jurídica</option>
+              </select>
+
+              <div class="flex">
+                <button type="button" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 mr-2" onclick="document.getElementById('modal-nova-conta').classList.remove('show')">Cancelar</button>
+                <button type="submit" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 text-white">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
 
       <div id="footer-container"></div>
@@ -128,5 +153,45 @@
 
   <script type="module" src="assets/js/includes.js"></script>
   <script type="module" src="assets/js/contas.js"></script>
+  <script>
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+
+  // Atualiza ícone/texto do botão
+  const icon = document.getElementById('icon-theme');
+  const label = document.getElementById('label-theme');
+  if (icon && label) {
+    if (theme === 'dark') {
+      icon.textContent = '☀️';
+      label.textContent = 'Modo Claro';
+    } else {
+      icon.textContent = '🌙';
+      label.textContent = 'Modo Escuro';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const btnToggle = document.getElementById('btn-toggle-theme');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      const current = localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
+      setTheme(current);
+    });
+  }
+
+  // Inicialização ao abrir a página
+  const saved = localStorage.getItem('theme') || 'light';
+  setTheme(saved);
+
+  // Sincronizar tema entre abas
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme') {
+      setTheme(e.newValue);
+    }
+  });
+});
+</script>
 </body>
 </html>

@@ -6,6 +6,7 @@
   <title>Dashboard - Meu Gestor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="assets/css/modais.css">
+  <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
   <div class="flex min-h-screen">
@@ -91,24 +92,6 @@
           </button>
         </div>
 
-        <!-- Adicione este bloco abaixo da tabela ou onde desejar -->
-        <section class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
-          <!-- Card: Despesas por Categoria -->
-          <div class="bg-white shadow-lg rounded-2xl p-4">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Despesas por Categoria</h2>
-            <canvas id="grafico-despesas-categorias" height="300"></canvas>
-          </div>
-
-          <!-- Card: Receita vs Despesa Mensal -->
-          <div class="bg-white shadow-lg rounded-2xl p-4">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Receitas x Despesas (últimos 6 meses)</h2>
-            <canvas id="grafico-receitas-despesas-mensais" height="300"></canvas>
-          </div>
-        </section>
-<div class="text-right">
-  <button id="btn-abrir-modal" ...>➕ Novo Lançamento</button>
-  <button id="btn-whatsapp" ...>➕ Inserir via WhatsApp</button>
-</div>
         <!-- BOTÕES DE CUPOM FISCAL -->
         <div class="flex flex-wrap gap-2 justify-end my-4">
           <input type="file" id="xml-upload" accept=".xml" class="hidden" />
@@ -127,7 +110,6 @@
     <div class="bg-white rounded-lg w-full max-w-lg p-6 relative">
       <button id="btn-fechar-modal" class="absolute top-2 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
       <h2 class="text-xl font-semibold mb-4">Novo Lançamento</h2>
-
       <form id="form-lancamento" class="space-y-4">
         <div>
           <label class="block font-medium mb-1">Descrição</label>
@@ -170,7 +152,6 @@
             <option value="recebido">Recebido</option>
           </select>
         </div>
-
         <!-- Google Agenda -->
         <div>
           <label class="flex items-center gap-2 font-medium">
@@ -178,7 +159,6 @@
             Adicionar ao Google Agenda
           </label>
         </div>
-
         <!-- Recorrente -->
         <div>
           <label class="flex items-center gap-2 font-medium">
@@ -186,7 +166,6 @@
             Lançamento Recorrente
           </label>
         </div>
-
         <div id="recorrencia-config" class="space-y-2 hidden">
           <div>
             <label class="block font-medium mb-1">Frequência</label>
@@ -211,12 +190,10 @@
             <input type="number" id="repeticoes" min="1" class="w-full border rounded px-3 py-2" />
           </div>
         </div>
-
         <div class="mt-2">
           <label class="block text-sm font-medium text-gray-700">Importar cupom fiscal (XML NFC-e):</label>
           <input type="file" id="input-xml-nfce" accept=".xml" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
-
         <div class="text-right">
           <button type="button" id="btn-cancelar" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
@@ -226,40 +203,38 @@
   </div>
 
   <!-- MODAL: Nova Conta -->
-<div id="modal-nova-conta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-  <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md relative">
-    <h2 class="text-xl font-semibold mb-4">Nova Conta</h2>
-    <form id="form-nova-conta" class="space-y-4">
-      <input type="text" id="nova-conta-nome" placeholder="Nome da Conta" class="w-full border rounded px-3 py-2" required />
-      <select id="nova-conta-tipo" class="w-full border rounded px-3 py-2" required>
-        <option value="">Selecione Titularidade</option>
-        <option value="pf">Pessoa Física</option>
-        <option value="pj">Pessoa Jurídica</option>
-      </select>
-      <div class="flex justify-end gap-2 pt-4">
-        <button type="button" class="btn-cancelar-conta bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
-      </div>
-    </form>
-  </div>
-</div>
+  <div id="modal-nova-conta" class="modal-bg z-50">
+    <div class="modal-content w-full max-w-md relative">
+      <button type="button" class="absolute top-2 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold" onclick="document.getElementById('modal-nova-conta').classList.remove('show')">&times;</button>
+      <h2>Nova Conta</h2>
+      <form id="form-nova-conta">
+        <label for="nova-conta-nome">Nome da Conta</label>
+        <input type="text" id="nova-conta-nome" required />
 
-  <!-- Modal de Nova Categoria -->
-  <div id="modal-categoria" class="modal-bg hidden">
-    <div class="modal-content">
-      <h2>Nova Categoria</h2>
-      <form id="form-modal-categoria">
-        <label for="nome-modal-categoria">Nome da Categoria</label>
-        <input type="text" id="nome-modal-categoria" required />
-        <label for="tipo-modal-categoria">Tipo</label>
-        <select id="tipo-modal-categoria" required>
-          <option value="receita">Receita</option>
-          <option value="despesa">Despesa</option>
-          <option value="ambos">Ambos</option>
+        <label for="nova-conta-tipo">Titularidade</label>
+        <select id="nova-conta-tipo" required>
+          <option value="">Selecione</option>
+          <option value="pf">Pessoa Física</option>
+          <option value="pj">Pessoa Jurídica</option>
         </select>
-        <div>
-          <button type="button" id="btn-cancelar-modal-categoria">Cancelar</button>
-          <button type="submit">Salvar</button>
+
+        <div class="flex">
+          <button type="button" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 mr-2" onclick="document.getElementById('modal-nova-conta').classList.remove('show')">Cancelar</button>
+          <button type="submit" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 text-white">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Nova Categoria -->
+  <div id="modal-nova-categoria" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md relative">
+      <h2 class="text-xl font-semibold mb-4">Nova Categoria</h2>
+      <form id="form-nova-categoria" class="space-y-4">
+        <input type="text" id="nova-categoria-nome" placeholder="Nome da Categoria" class="w-full border rounded px-3 py-2" required />
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" class="btn-cancelar-categoria bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
         </div>
       </form>
     </div>
@@ -272,5 +247,6 @@
   <script type="module" src="assets/js/includes.js"></script>
   <script type="module" src="assets/js/dashboard.js"></script>
   <script type="module" src="assets/js/google.js"></script>
+  
 </body>
 </html>
