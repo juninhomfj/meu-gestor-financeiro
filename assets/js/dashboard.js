@@ -1,8 +1,8 @@
 import {
   db, collection, addDoc, getDocs, query, orderBy, limit,
-  doc, getDoc, setDoc, deleteDoc // IMPORTANTE: adicionar deleteDoc aqui
+  doc, getDoc, setDoc, deleteDoc
 } from "./firebase.js";
-import { criarEventoGoogleAgenda } from "./google.js";
+import { criarEventoGoogleAgenda, removerEventoGoogleAgenda } from "./google.js";
 
 // Elementos globais
 const modal = document.getElementById("modal-lancamento");
@@ -15,6 +15,7 @@ const selectConta = document.getElementById("select-conta");
 const selectCategoria = document.getElementById("select-categoria");
 const btnAddConta = document.getElementById("btn-add-conta");
 const btnAddCategoria = document.getElementById("btn-add-categoria");
+const tipoCategoriaInput = document.getElementById("tipo"); // select do tipo de lançamento
 
 const chkRecorrente = document.getElementById("recorrente");
 const divRecorrenciaConfig = document.getElementById("recorrencia-config");
@@ -77,7 +78,7 @@ btnFiltroPJ.addEventListener("click", () => {
 function abrirModal() {
   modal.classList.remove("hidden");
   carregarContas();
-  carregarCategorias();
+  carregarCategorias(formLancamento.tipo.value); // já filtra pelo tipo atual
 }
 
 function fecharModal() {
@@ -119,14 +120,23 @@ async function carregarContas() {
 }
 
 // Carregar categorias do banco
-async function carregarCategorias() {
+async function carregarCategorias(tipoLancamento = null) {
   selectCategoria.innerHTML = "";
-  const categoriasSnapshot = await getDocs(collection(db, "categorias"));
-  categoriasSnapshot.forEach((doc) => {
-    const option = document.createElement("option");
-    option.value = doc.data().nome;
-    option.textContent = doc.data().nome;
-    selectCategoria.appendChild(option);
+  const snapshot = await getDocs(collection(db, "categorias"));
+  snapshot.forEach(docSnap => {
+    const cat = docSnap.data();
+    // Mostra se for do tipo correto ou "ambos" ou se não estiver filtrando
+    if (
+      !tipoLancamento ||
+      cat.tipo === "ambos" ||
+      cat.tipo === tipoLancamento ||
+      !cat.tipo // para categorias antigas sem tipo
+    ) {
+      const option = document.createElement("option");
+      option.value = cat.nome;
+      option.textContent = cat.nome;
+      selectCategoria.appendChild(option);
+    }
   });
 }
 
@@ -212,7 +222,7 @@ async function carregarLancamentos() {
         <td>${lanc.status || "pendente"}</td>
         <td>
           <button class="text-blue-600 hover:underline btn-editar" data-id="${lanc.id}">✏️</button>
-          <button class="text-red-600 hover:underline btn-excluir ml-2" data-id="${lanc.id}">❌</button>
+          <button class="text-red-600 hover:underline btn-excluir ml-2" data-id="${lanc.id}">🗑️</button>
         </td>
       `;
       listaLancamentosEl.appendChild(linha);
@@ -230,22 +240,34 @@ async function carregarLancamentos() {
   }
 }
 
-// Função para excluir lançamento
+// Função para excluir lançamento (com remoção do evento Google Agenda, se existir)
 async function excluirLancamento(id) {
+  if (!confirm("Tem certeza que deseja excluir este lançamento?")) return;
+
   try {
-    const confirma = confirm("Tem certeza que deseja excluir este lançamento?");
-    if (!confirma) return;
+    const ref = doc(db, "lancamentos", id);
+    const snap = await getDoc(ref);
 
-    await deleteDoc(doc(db, "lancamentos", id));
+    if (snap.exists()) {
+      const lancamento = snap.data();
 
-    // Remove da tabela para atualização imediata
-    const linha = document.getElementById(`lancamento-${id}`);
-    if (linha) linha.remove();
+      // Tenta remover do Google Agenda se tiver eventId
+      if (lancamento.eventId) {
+        try {
+          await removerEventoGoogleAgenda(lancamento.eventId);
+          console.log("Evento removido do Google Agenda.");
+        } catch (e) {
+          console.warn("Erro ao remover do Google Agenda:", e);
+        }
+      }
 
-    alert("Lançamento excluído com sucesso!");
-  } catch (error) {
-    console.error("Erro ao excluir lançamento:", error);
-    alert("Erro ao excluir lançamento. Tente novamente.");
+      await deleteDoc(ref);
+      alert("Lançamento excluído!");
+      carregarLancamentos();
+    }
+  } catch (err) {
+    console.error("Erro ao excluir:", err);
+    alert("Erro ao excluir lançamento.");
   }
 }
 
@@ -321,78 +343,127 @@ async function editarLancamento(id) {
 
   const lanc = snap.data();
 
+  // Debug: veja tudo que veio do Firebase
+  console.log("Dados do lançamento para edição:", lanc);
+
   formLancamento.descricao.value = lanc.descricao || "";
   formLancamento.valor.value = lanc.valor || "";
-  formLancamento.data.value = lanc.data || "";
+  // Corrige campo data para aceitar apenas "YYYY-MM-DD"
+  formLancamento.data.value = lanc.data ? lanc.data.split("T")[0] : "";
   formLancamento.tipo.value = lanc.tipo || "receita";
   formLancamento.status.value = lanc.status || "pendente";
   selectConta.value = lanc.conta || "";
   selectCategoria.value = lanc.categoria || "";
 
+  // Marca o checkbox do Google Agenda se o lançamento tinha evento
+  if (chkAgenda) {
+    chkAgenda.checked = !!lanc.eventId;
+  }
+
+  // Corrige recorrência
   if (lanc.recorrente) {
     chkRecorrente.checked = true;
     divRecorrenciaConfig.classList.remove("hidden");
-    formLancamento.frequencia.value = lanc.frequencia;
-    formLancamento.repeticoes.value = lanc.repeticoes;
+    formLancamento.frequencia.value = lanc.frequencia || "";
+    formLancamento.repeticoes.value = lanc.repeticoes || "";
     if (campoOutros && lanc.frequencia === "outros") {
       campoOutros.classList.remove("hidden");
       frequenciaOutrosInput.value = lanc.frequenciaOutros || "";
+    } else if (campoOutros) {
+      campoOutros.classList.add("hidden");
+      frequenciaOutrosInput.value = "";
     }
   } else {
     chkRecorrente.checked = false;
     divRecorrenciaConfig.classList.add("hidden");
     if (campoOutros) campoOutros.classList.add("hidden");
+    if (frequenciaOutrosInput) frequenciaOutrosInput.value = "";
   }
 
   editandoId = id;
   abrirModal();
 }
 
-// Form submit
-formLancamento.addEventListener("submit", async (e) => {
+// Salvar lançamento
+async function salvarLancamento(e) {
   e.preventDefault();
 
   const dados = {
     descricao: formLancamento.descricao.value.trim(),
     valor: parseFloat(formLancamento.valor.value),
     data: formLancamento.data.value,
-    tipo: formLancamento.tipo.value,
-    status: formLancamento.status.value,
     conta: selectConta.value,
     categoria: selectCategoria.value,
-    criadoEm: new Date().toISOString(),
-    recorrente: chkRecorrente.checked,
-    frequencia: frequenciaSelect.value,
-    repeticoes: formLancamento.repeticoes ? parseInt(formLancamento.repeticoes.value) : 1,
-    frequenciaOutros: frequenciaOutrosInput ? frequenciaOutrosInput.value.trim() : ""
+    tipo: formLancamento.tipo.value,
+    status: formLancamento.status.value || "pendente",
+    criadoEm: new Date().toISOString()
   };
 
-  if (!dados.descricao || isNaN(dados.valor) || !dados.data || !dados.tipo || !dados.conta) {
-    alert("Preencha todos os campos obrigatórios.");
+  if (chkRecorrente.checked) {
+    dados.recorrente = true;
+    dados.frequencia = formLancamento.frequencia.value;
+    dados.repeticoes = parseInt(formLancamento.repeticoes.value) || 1;
+    if (dados.frequencia === "outros" && frequenciaOutrosInput) {
+      dados.frequenciaOutros = parseInt(frequenciaOutrosInput.value) || 1;
+    }
+  }
+
+  if (!dados.descricao || isNaN(dados.valor) || !dados.data || !dados.conta || !dados.categoria) {
+    alert("Preencha todos os campos corretamente.");
     return;
   }
 
   try {
     if (editandoId) {
-      // Atualizar
-      await setDoc(doc(db, "lancamentos", editandoId), dados);
-      alert("Lançamento atualizado com sucesso!");
-    } else {
-      // Criar
-      await addDoc(collection(db, "lancamentos"), dados);
-      alert("Lançamento criado com sucesso!");
-      // Só chama o Google Agenda se for novo lançamento e checkbox marcado
-      if (chkAgenda && chkAgenda.checked) {
-        criarEventoGoogleAgenda(dados);
+      const docRef = doc(db, "lancamentos", editandoId);
+      const snap = await getDoc(docRef);
+
+      if (snap.exists()) {
+        const dadosAntigos = snap.data();
+
+        // Se o lançamento anterior tinha um evento Google, remover
+        if (dadosAntigos.eventId) {
+          try {
+            await removerEventoGoogleAgenda(dadosAntigos.eventId);
+            console.log("Evento antigo removido com sucesso");
+          } catch (err) {
+            console.warn("Falha ao remover evento antigo:", err.message);
+          }
+        }
+
+        // Se marcado para adicionar à agenda, cria novo evento
+        if (chkAgenda && chkAgenda.checked) {
+          const novoEvento = await criarEventoGoogleAgenda(dados);
+          if (novoEvento?.result?.id) {
+            dados.eventId = novoEvento.result.id;
+          }
+        }
       }
+
+      await setDoc(docRef, dados);
+      alert("Lançamento atualizado!");
+    } else {
+      // Novo lançamento
+      if (chkAgenda && chkAgenda.checked) {
+        const eventId = await criarEventoGoogleAgenda(dados);
+        if (eventId) {
+          dados.eventId = eventId;
+        }
+      }
+
+      await addDoc(collection(db, "lancamentos"), dados);
+      alert("Lançamento salvo!");
     }
+
     fecharModal();
     carregarLancamentos();
-  } catch (error) {
-    console.error("Erro ao salvar lançamento:", error);
-    alert("Erro ao salvar lançamento. Tente novamente.");
+  } catch (err) {
+    alert("Erro ao salvar: " + err.message);
   }
-});
+}
+
+// Form submit
+formLancamento.addEventListener("submit", salvarLancamento);
 
 chkRecorrente.addEventListener("change", () => {
   if (chkRecorrente.checked) {
@@ -416,7 +487,48 @@ btnFecharModal.addEventListener("click", fecharModal);
 btnCancelar.addEventListener("click", fecharModal);
 
 btnAddConta.addEventListener("click", adicionarConta);
-btnAddCategoria.addEventListener("click", adicionarCategoria);
+btnAddCategoria.addEventListener("click", () => {
+  // Seta o tipo padrão conforme o tipo selecionado no lançamento
+  tipoModalCategoria.value = tipoCategoriaInput ? tipoCategoriaInput.value : "ambos";
+  nomeModalCategoria.value = "";
+  modalCategoria.classList.remove("hidden");
+  nomeModalCategoria.focus();
+});
+
+btnCancelarModalCategoria.addEventListener("click", () => {
+  modalCategoria.classList.add("hidden");
+});
+
+formModalCategoria.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nome = nomeModalCategoria.value.trim();
+  const tipo = tipoModalCategoria.value;
+
+  if (!nome || !tipo) {
+    alert("Preencha todos os campos.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "categorias"), {
+      nome,
+      tipo,
+      criadoEm: new Date().toISOString()
+    });
+    alert("Categoria criada!");
+    modalCategoria.classList.add("hidden");
+    carregarCategorias(tipo);
+    setTimeout(() => {
+      selectCategoria.value = nome;
+    }, 300);
+  } catch (err) {
+    alert("Erro ao criar categoria.");
+  }
+});
+
+formLancamento.tipo.addEventListener("change", () => {
+  carregarCategorias(formLancamento.tipo.value);
+});
 
 // Inicializa os filtros e dados
 atualizarBotaoFiltro();

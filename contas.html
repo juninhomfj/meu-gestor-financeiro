@@ -81,6 +81,45 @@
           </table>
           <span id="total-saldo" class="block mt-2 font-bold text-blue-700"></span>
         </section>
+
+        <!-- Seção de gerenciamento de categorias -->
+        <section class="bg-white rounded-xl shadow p-4 mt-10">
+          <h2 class="text-lg font-semibold mb-4">📂 Gerenciar Categorias</h2>
+
+          <!-- Formulário de categoria -->
+          <form id="form-categoria" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <label for="nome-categoria" class="block text-sm font-medium mb-1">Nome da Categoria</label>
+              <input type="text" id="nome-categoria" class="w-full border rounded p-2" required />
+            </div>
+            <div>
+              <label for="tipo-categoria" class="block text-sm font-medium mb-1">Tipo de Categoria</label>
+              <select id="tipo-categoria" class="w-full border rounded p-2" required>
+                <option value="">Selecione</option>
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+                <option value="ambos">Ambos</option>
+              </select>
+            </div>
+            <div class="md:col-span-1 flex items-end justify-end">
+              <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">💾 Salvar Categoria</button>
+            </div>
+          </form>
+
+          <!-- Tabela de categorias -->
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-500 border-b">
+                <th class="py-2">Nome</th>
+                <th>Tipo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-categorias">
+              <!-- Categorias serão adicionadas via JS -->
+            </tbody>
+          </table>
+        </section>
       </div>
 
       <div id="footer-container"></div>

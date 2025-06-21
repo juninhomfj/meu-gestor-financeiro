@@ -1,4 +1,4 @@
-import { db, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc } from "./firebase.js";
+import { db, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc, setDoc } from "./firebase.js";
 
 // Elementos globais
 const corpo = document.getElementById("lista-contas");
@@ -188,4 +188,86 @@ if (buscaConta) {
   });
 }
 
-window.addEventListener("DOMContentLoaded", carregarContas);
+window.addEventListener("DOMContentLoaded", () => {
+  carregarContas();
+  carregarCategorias(); // ← aqui carregamos as categorias também
+});
+
+// ------------------------------
+// GERENCIAMENTO DE CATEGORIAS
+// ------------------------------
+
+const formCategoria = document.getElementById("form-categoria");
+const listaCategorias = document.getElementById("lista-categorias");
+
+async function carregarCategorias() {
+  listaCategorias.innerHTML = "";
+  const snapshot = await getDocs(collection(db, "categorias"));
+
+  snapshot.forEach(docSnap => {
+    const c = docSnap.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="py-2">${c.nome}</td>
+      <td class="capitalize">${c.tipo}</td>
+      <td>
+        <button class="btn-excluir-cat bg-red-500 text-white px-2 rounded" data-id="${docSnap.id}">Excluir</button>
+      </td>
+    `;
+    listaCategorias.appendChild(tr);
+  });
+
+  listaCategorias.querySelectorAll(".btn-excluir-cat").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (confirm("Excluir esta categoria?")) {
+        await deleteDoc(doc(db, "categorias", btn.dataset.id));
+        carregarCategorias();
+      }
+    });
+  });
+}
+
+formCategoria.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const nome = document.getElementById("nome-categoria").value.trim();
+  const tipo = document.getElementById("tipo-categoria").value;
+
+  if (!nome || !tipo) return alert("Preencha todos os campos!");
+
+  try {
+    await addDoc(collection(db, "categorias"), {
+      nome,
+      tipo,
+      criadoEm: new Date().toISOString()
+    });
+    alert("Categoria salva!");
+    formCategoria.reset();
+    carregarCategorias();
+  } catch (err) {
+    console.error("Erro ao salvar categoria:", err);
+    alert("Erro ao salvar categoria.");
+  }
+});
+
+// Preencher categorias no formulário de lançamento
+async function preencherCategorias(selectCategoria) {
+  const snapshot = await getDocs(collection(db, "categorias"));
+  selectCategoria.innerHTML = '<option value="">Selecione</option>';
+  snapshot.forEach(docSnap => {
+    const c = docSnap.data();
+    const option = document.createElement("option");
+    option.value = c.nome;
+    option.textContent = c.nome;
+    selectCategoria.appendChild(option);
+  });
+}
+
+// Chamar preencherCategorias onde necessário, por exemplo, ao abrir o formulário de lançamento
+window.addEventListener("DOMContentLoaded", () => {
+  carregarContas();
+  carregarCategorias();
+  const selectCategoria = document.getElementById("categoria-lancamento");
+  if (selectCategoria) {
+    preencherCategorias(selectCategoria);
+  }
+});

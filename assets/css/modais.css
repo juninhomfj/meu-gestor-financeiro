@@ -1,0 +1,70 @@
+/* Estilo base para todos os modais */
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.show {
+  display: flex;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
+  position: relative;
+}
+.modal-content h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.modal-content label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+.modal-content .flex {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+.modal-content button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.modal-content .bg-gray-300 {
+  background: #e5e7eb;
+  color: #374151;
+}
+.modal-content .bg-blue-600 {
+  background: #2563eb;
+  color: #fff;
+}
+.modal-content .bg-gray-300:hover {
+  background: #d1d5db;
+}
+.modal-content .bg-blue-600:hover {
+  background: #1d4ed8;
+}

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard - Meu Gestor</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/modais.css">
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
   <div class="flex min-h-screen">
@@ -118,9 +119,9 @@
         </div>
         <div>
           <label class="block font-medium mb-1">Categoria</label>
-          <div class="flex gap-2">
-            <select id="select-categoria" required class="flex-grow border rounded px-3 py-2"></select>
-            <button type="button" id="btn-add-categoria" class="bg-green-500 text-white px-3 rounded">+</button>
+          <div class="flex items-center gap-2">
+            <select id="select-categoria" class="border rounded p-2 flex-1" required></select>
+            <button type="button" id="btn-add-categoria" class="bg-green-500 text-white px-2 py-1 rounded" title="Nova categoria">+</button>
           </div>
         </div>
         <div>
@@ -176,6 +177,31 @@
         <div class="text-right">
           <button type="button" id="btn-cancelar" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Nova Categoria -->
+  <div id="modal-categoria" class="modal-bg hidden">
+    <div class="modal-content">
+      <h2 class="text-lg font-semibold mb-4">Nova Categoria</h2>
+      <form id="form-modal-categoria" class="space-y-4">
+        <div>
+          <label for="nome-modal-categoria" class="block text-sm font-medium mb-1">Nome da Categoria</label>
+          <input type="text" id="nome-modal-categoria" class="w-full border rounded p-2" required />
+        </div>
+        <div>
+          <label for="tipo-modal-categoria" class="block text-sm font-medium mb-1">Tipo</label>
+          <select id="tipo-modal-categoria" class="w-full border rounded p-2" required>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+            <option value="ambos">Ambos</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" id="btn-cancelar-modal-categoria" class="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
         </div>
       </form>
     </div>

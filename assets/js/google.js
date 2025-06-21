@@ -77,9 +77,33 @@ export async function criarEventoGoogleAgenda(dados) {
     const response = await request;
     console.log("Evento criado:", response);
     alert("✅ Evento adicionado ao Google Agenda!");
+    
+    if (response?.result?.id) {
+      dados.eventId = response.result.id;
+    }
+
+    return response.result.id;
   } catch (err) {
     console.error("Erro ao criar evento na Agenda:", err);
     alert("❌ Não foi possível adicionar ao Google Agenda.");
+    return null;
+  }
+}
+
+// Função para remover evento do Google Agenda
+export async function removerEventoGoogleAgenda(eventId) {
+  try {
+    await carregarBibliotecasGoogle();
+    await autenticarGoogle(); // Garante token válido
+
+    await gapi.client.load("calendar", "v3");
+
+    await gapi.client.calendar.events.delete({
+      calendarId: "primary",
+      eventId: eventId,
+    });
+  } catch (err) {
+    throw new Error("Erro ao remover evento do Google Agenda: " + (err.message || err));
   }
 }
 
