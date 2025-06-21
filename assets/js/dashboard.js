@@ -2,6 +2,7 @@ import {
   db, collection, addDoc, getDocs, query, orderBy, limit,
   doc, getDoc, setDoc
 } from "./firebase.js";
+import { criarEventoGoogleAgenda } from "./google.js";
 
 // Elementos globais
 const modal = document.getElementById("modal-lancamento");
@@ -17,6 +18,7 @@ const btnAddCategoria = document.getElementById("btn-add-categoria");
 
 const chkRecorrente = document.getElementById("recorrente");
 const divRecorrenciaConfig = document.getElementById("recorrencia-config");
+const chkAgenda = document.getElementById("adicionar-agenda");
 
 const saldoPFEl = document.getElementById("saldo-pf");
 const saldoPJEl = document.getElementById("saldo-pj");
@@ -346,6 +348,10 @@ async function salvarLancamento(e) {
       alert("Lançamento atualizado!");
     } else {
       await addDoc(collection(db, "lancamentos"), dados);
+      // Adicionar ao Google Agenda se marcado
+      if (chkAgenda && chkAgenda.checked) {
+        criarEventoGoogleAgenda(dados);
+      }
       alert("Lançamento salvo!");
     }
     fecharModal();
