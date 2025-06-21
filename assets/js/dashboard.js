@@ -1,6 +1,6 @@
 import {
   db, collection, addDoc, getDocs, query, orderBy, limit,
-  doc, getDoc, setDoc
+  doc, getDoc, setDoc, deleteDoc // IMPORTANTE: adicionar deleteDoc aqui
 } from "./firebase.js";
 import { criarEventoGoogleAgenda } from "./google.js";
 
@@ -19,6 +19,9 @@ const btnAddCategoria = document.getElementById("btn-add-categoria");
 const chkRecorrente = document.getElementById("recorrente");
 const divRecorrenciaConfig = document.getElementById("recorrencia-config");
 const chkAgenda = document.getElementById("adicionar-agenda");
+const campoOutros = document.getElementById("campo-outros");
+const frequenciaSelect = document.getElementById("frequencia");
+const frequenciaOutrosInput = document.getElementById("frequencia-outros");
 
 const saldoPFEl = document.getElementById("saldo-pf");
 const saldoPJEl = document.getElementById("saldo-pj");
@@ -82,6 +85,7 @@ function fecharModal() {
   formLancamento.reset();
   editandoId = null;
   divRecorrenciaConfig.classList.add("hidden");
+  if (campoOutros) campoOutros.classList.add("hidden");
 }
 
 // Carregar contas do banco e guardar tipos
@@ -162,7 +166,7 @@ async function adicionarCategoria() {
   }
 }
 
-// Carregar lançamentos
+// Carregar lançamentos com botão editar e excluir
 async function carregarLancamentos() {
   listaLancamentosEl.innerHTML = "";
 
@@ -197,6 +201,7 @@ async function carregarLancamentos() {
       const tipoContaLanc = tiposContas[lanc.conta] || "pf";
 
       const linha = document.createElement("tr");
+      linha.id = `lancamento-${lanc.id}`;
       linha.classList.add("border-b");
       linha.innerHTML = `
         <td class="py-2">${formatarData(lanc.data)}</td>
@@ -205,7 +210,10 @@ async function carregarLancamentos() {
         <td class="${lanc.tipo === 'despesa' ? 'text-red-600' : 'text-green-600'} font-semibold">R$ ${lanc.valor.toFixed(2)}</td>
         <td>${lanc.conta} (${tipoContaLanc === "pf" ? "PF" : "PJ"})</td>
         <td>${lanc.status || "pendente"}</td>
-        <td><button class="text-blue-600 hover:underline btn-editar" data-id="${lanc.id}">✏️</button></td>
+        <td>
+          <button class="text-blue-600 hover:underline btn-editar" data-id="${lanc.id}">✏️</button>
+          <button class="text-red-600 hover:underline btn-excluir ml-2" data-id="${lanc.id}">❌</button>
+        </td>
       `;
       listaLancamentosEl.appendChild(linha);
     });
@@ -213,8 +221,31 @@ async function carregarLancamentos() {
     document.querySelectorAll(".btn-editar").forEach(btn => {
       btn.addEventListener("click", () => editarLancamento(btn.dataset.id));
     });
+
+    document.querySelectorAll(".btn-excluir").forEach(btn => {
+      btn.addEventListener("click", () => excluirLancamento(btn.dataset.id));
+    });
   } catch (err) {
     console.error("Erro ao carregar lançamentos:", err);
+  }
+}
+
+// Função para excluir lançamento
+async function excluirLancamento(id) {
+  try {
+    const confirma = confirm("Tem certeza que deseja excluir este lançamento?");
+    if (!confirma) return;
+
+    await deleteDoc(doc(db, "lancamentos", id));
+
+    // Remove da tabela para atualização imediata
+    const linha = document.getElementById(`lancamento-${id}`);
+    if (linha) linha.remove();
+
+    alert("Lançamento excluído com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir lançamento:", error);
+    alert("Erro ao excluir lançamento. Tente novamente.");
   }
 }
 
@@ -240,7 +271,6 @@ function atualizarCards(lancamentos) {
     const dataLanc = new Date(lanc.data);
     const tipoContaLanc = tiposContas[lanc.conta] || "pf";
 
-    // Cálculo saldo PF e PJ (considerando receita/despesa)
     if (tipoContaLanc === "pf") {
       if (lanc.tipo === "receita") saldoPF += lanc.valor;
       else if (lanc.tipo === "despesa") saldoPF -= lanc.valor;
@@ -249,22 +279,19 @@ function atualizarCards(lancamentos) {
       else if (lanc.tipo === "despesa") saldoPJ -= lanc.valor;
     }
 
-    // Despesas e receitas do mês atual (data entre inicioMes e fimMes)
     if (dataLanc >= inicioMes && dataLanc <= fimMes) {
       if (lanc.tipo === "receita") receitasMes += lanc.valor;
       else if (lanc.tipo === "despesa") despesasMes += lanc.valor;
-      // Despesas pendentes do mês
+
       if (lanc.tipo === "despesa" && lanc.status === "pendente") {
         despesasPendentesMes += lanc.valor;
       }
     }
 
-    // Despesas futuras (próximos 30 dias)
     if (lanc.tipo === "despesa" && dataLanc > hoje && dataLanc <= addDias(hoje, 30)) {
       despesasFuturas30 += lanc.valor;
     }
 
-    // Todas as despesas
     if (lanc.tipo === "despesa") {
       todasDespesas += lanc.valor;
     }
@@ -307,89 +334,96 @@ async function editarLancamento(id) {
     divRecorrenciaConfig.classList.remove("hidden");
     formLancamento.frequencia.value = lanc.frequencia;
     formLancamento.repeticoes.value = lanc.repeticoes;
+    if (campoOutros && lanc.frequencia === "outros") {
+      campoOutros.classList.remove("hidden");
+      frequenciaOutrosInput.value = lanc.frequenciaOutros || "";
+    }
   } else {
     chkRecorrente.checked = false;
     divRecorrenciaConfig.classList.add("hidden");
+    if (campoOutros) campoOutros.classList.add("hidden");
   }
 
   editandoId = id;
   abrirModal();
 }
 
-// Salvar lançamento
-async function salvarLancamento(e) {
+// Form submit
+formLancamento.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const dados = {
     descricao: formLancamento.descricao.value.trim(),
     valor: parseFloat(formLancamento.valor.value),
     data: formLancamento.data.value,
+    tipo: formLancamento.tipo.value,
+    status: formLancamento.status.value,
     conta: selectConta.value,
     categoria: selectCategoria.value,
-    tipo: formLancamento.tipo.value,
-    status: formLancamento.status.value || "pendente",
-    criadoEm: new Date().toISOString()
+    criadoEm: new Date().toISOString(),
+    recorrente: chkRecorrente.checked,
+    frequencia: frequenciaSelect.value,
+    repeticoes: formLancamento.repeticoes ? parseInt(formLancamento.repeticoes.value) : 1,
+    frequenciaOutros: frequenciaOutrosInput ? frequenciaOutrosInput.value.trim() : ""
   };
 
-  if (chkRecorrente.checked) {
-    dados.recorrente = true;
-    dados.frequencia = formLancamento.frequencia.value;
-    dados.repeticoes = parseInt(formLancamento.repeticoes.value) || 1;
-  }
-
-  if (!dados.descricao || isNaN(dados.valor) || !dados.data || !dados.conta || !dados.categoria) {
-    alert("Preencha todos os campos corretamente.");
+  if (!dados.descricao || isNaN(dados.valor) || !dados.data || !dados.tipo || !dados.conta) {
+    alert("Preencha todos os campos obrigatórios.");
     return;
   }
 
   try {
     if (editandoId) {
+      // Atualizar
       await setDoc(doc(db, "lancamentos", editandoId), dados);
-      alert("Lançamento atualizado!");
+      alert("Lançamento atualizado com sucesso!");
     } else {
+      // Criar
       await addDoc(collection(db, "lancamentos"), dados);
-      // Adicionar ao Google Agenda se marcado
+      alert("Lançamento criado com sucesso!");
+      // Só chama o Google Agenda se for novo lançamento e checkbox marcado
       if (chkAgenda && chkAgenda.checked) {
         criarEventoGoogleAgenda(dados);
       }
-      alert("Lançamento salvo!");
     }
     fecharModal();
     carregarLancamentos();
-  } catch (err) {
-    alert("Erro ao salvar: " + err.message);
+  } catch (error) {
+    console.error("Erro ao salvar lançamento:", error);
+    alert("Erro ao salvar lançamento. Tente novamente.");
   }
-}
+});
 
-// Cancelar
-function cancelar() {
-  if (confirm("Deseja cancelar? Os dados serão perdidos.")) {
-    fecharModal();
+chkRecorrente.addEventListener("change", () => {
+  if (chkRecorrente.checked) {
+    divRecorrenciaConfig.classList.remove("hidden");
+  } else {
+    divRecorrenciaConfig.classList.add("hidden");
+    if (campoOutros) campoOutros.classList.add("hidden");
   }
-}
+});
 
-// Mostrar recorrência
-if (chkRecorrente && divRecorrenciaConfig) {
-  chkRecorrente.addEventListener("change", () => {
-    divRecorrenciaConfig.classList.toggle("hidden", !chkRecorrente.checked);
-  });
-}
+frequenciaSelect.addEventListener("change", () => {
+  if (frequenciaSelect.value === "outros" && campoOutros) {
+    campoOutros.classList.remove("hidden");
+  } else if (campoOutros) {
+    campoOutros.classList.add("hidden");
+  }
+});
 
-// Formatar datas
-function formatarData(dataStr) {
-  const opcoes = { year: 'numeric', month: '2-digit', day: '2-digit' };
-  return new Intl.DateTimeFormat('pt-BR', opcoes).format(new Date(dataStr));
-}
-
-// Eventos
 btnAbrirModal.addEventListener("click", abrirModal);
 btnFecharModal.addEventListener("click", fecharModal);
-btnCancelar.addEventListener("click", cancelar);
-formLancamento.addEventListener("submit", salvarLancamento);
+btnCancelar.addEventListener("click", fecharModal);
+
 btnAddConta.addEventListener("click", adicionarConta);
 btnAddCategoria.addEventListener("click", adicionarCategoria);
 
-window.addEventListener("DOMContentLoaded", () => {
-  atualizarBotaoFiltro();
-  carregarLancamentos();
-});
+// Inicializa os filtros e dados
+atualizarBotaoFiltro();
+carregarLancamentos();
+
+// Função para formatar data para dd/mm/yyyy
+function formatarData(dataISO) {
+  const d = new Date(dataISO);
+  return d.toLocaleDateString("pt-BR");
+}

@@ -10,7 +10,8 @@ import {
   limit,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  deleteDoc // IMPORTANTE: adicionado aqui
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 // Configuração do Firebase - seus dados:
@@ -40,5 +41,6 @@ export {
   limit,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  deleteDoc // IMPORTANTE: exportado aqui também
 };

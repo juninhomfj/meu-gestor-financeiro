@@ -2,7 +2,6 @@
 
 // Configurações do seu projeto Google Cloud
 const CLIENT_ID = "813088641053-8u4q897ss0lhhi9rmnscphahr402lfga.apps.googleusercontent.com";
-const API_KEY = ""; // Não é necessário neste fluxo
 const SCOPES = "https://www.googleapis.com/auth/calendar.events";
 let tokenClient;
 let gapiIniciado = false;
@@ -10,6 +9,7 @@ let gapiIniciado = false;
 // Carregar a biblioteca da Google API
 function carregarBibliotecasGoogle() {
   return new Promise((resolve) => {
+    if (window.gapi && window.google) return resolve();
     const script1 = document.createElement("script");
     script1.src = "https://accounts.google.com/gsi/client";
     script1.onload = () => {
@@ -82,11 +82,6 @@ export async function criarEventoGoogleAgenda(dados) {
     alert("❌ Não foi possível adicionar ao Google Agenda.");
   }
 }
-
-// Exemplo de uso (adicione esse botão onde quiser):
-// <button onclick="conectarComGoogleAgenda()">🔗 Conectar Google Agenda</button>
-// E no seu script ao salvar:
-// criarEventoGoogleAgenda({ descricao: "Conta de luz", tipo: "despesa", data: "2025-06-30", conta: "Banco X", categoria: "Contas" });
 
 // Carregar as bibliotecas quando a página carregar
 window.addEventListener("DOMContentLoaded", carregarBibliotecasGoogle);
