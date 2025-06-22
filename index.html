@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard - Meu Gestor</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="assets/css/modais.css">
-  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/modais.css" />
+  <link rel="stylesheet" href="assets/css/main.css" />
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
   <div class="flex min-h-screen">
@@ -64,26 +64,26 @@
         </section>
 
         <!-- TABELA -->
-        <div class="bg-white rounded-xl shadow p-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-4 mb-6 overflow-auto">
           <h3 class="text-lg font-semibold mb-4">Últimos lançamentos</h3>
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left text-gray-500 border-b">
-                <th class="py-2">Data</th>
-                <th>Descrição</th>
-                <th>Tipo</th>
-                <th>Valor</th>
-                <th>Conta</th>
-                <th>Status</th>
-                <th>Ações</th>
+          <table class="w-full text-sm border-collapse border border-gray-300">
+            <thead class="bg-gray-100">
+              <tr class="text-left text-gray-700 border-b border-gray-300">
+                <th class="py-2 px-3 border-r border-gray-300">Data</th>
+                <th class="py-2 px-3 border-r border-gray-300">Descrição</th>
+                <th class="py-2 px-3 border-r border-gray-300">Tipo</th>
+                <th class="py-2 px-3 border-r border-gray-300">Valor</th>
+                <th class="py-2 px-3 border-r border-gray-300">Conta</th>
+                <th class="py-2 px-3 border-r border-gray-300">Status</th>
+                <th class="py-2 px-3">Ações</th>
               </tr>
             </thead>
             <tbody id="lista-lancamentos"></tbody>
           </table>
         </div>
 
-        <!-- BOTÃO -->
-        <div class="text-right">
+        <!-- BOTÕES DE AÇÃO -->
+        <div class="text-right flex gap-2 justify-end mb-6">
           <button id="btn-abrir-modal" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-xl shadow">
             ➕ Novo Lançamento
           </button>
@@ -192,7 +192,7 @@
         </div>
         <div class="mt-2">
           <label class="block text-sm font-medium text-gray-700">Importar cupom fiscal (XML NFC-e):</label>
-          <input type="file" id="input-xml-nfce" accept=".xml" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <input type="file" id="input-xml-nfce" accept=".xml" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
         </div>
         <div class="text-right">
           <button type="button" id="btn-cancelar" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
@@ -203,23 +203,25 @@
   </div>
 
   <!-- MODAL: Nova Conta -->
-  <div id="modal-nova-conta" class="modal-bg z-50">
-    <div class="modal-content w-full max-w-md relative">
-      <button type="button" class="absolute top-2 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold" onclick="document.getElementById('modal-nova-conta').classList.remove('show')">&times;</button>
-      <h2>Nova Conta</h2>
-      <form id="form-nova-conta">
-        <label for="nova-conta-nome">Nome da Conta</label>
-        <input type="text" id="nova-conta-nome" required />
-
-        <label for="nova-conta-tipo">Titularidade</label>
-        <select id="nova-conta-tipo" required>
-          <option value="">Selecione</option>
-          <option value="pf">Pessoa Física</option>
-          <option value="pj">Pessoa Jurídica</option>
-        </select>
-
-        <div class="flex">
-          <button type="button" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 mr-2" onclick="document.getElementById('modal-nova-conta').classList.remove('show')">Cancelar</button>
+  <div id="modal-nova-conta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div class="bg-white rounded-lg w-full max-w-md p-6 relative">
+      <button type="button" class="absolute top-2 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold" id="btn-fechar-nova-conta">&times;</button>
+      <h2 class="text-xl font-semibold mb-4">Nova Conta</h2>
+      <form id="form-nova-conta" class="space-y-4">
+        <div>
+          <label for="nova-conta-nome" class="block font-medium mb-1">Nome da Conta</label>
+          <input type="text" id="nova-conta-nome" required class="w-full border rounded px-3 py-2" />
+        </div>
+        <div>
+          <label for="nova-conta-tipo" class="block font-medium mb-1">Titularidade</label>
+          <select id="nova-conta-tipo" required class="w-full border rounded px-3 py-2">
+            <option value="">Selecione</option>
+            <option value="pf">Pessoa Física</option>
+            <option value="pj">Pessoa Jurídica</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" id="btn-cancelar-nova-conta" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
           <button type="submit" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 text-white">Salvar</button>
         </div>
       </form>
@@ -229,11 +231,20 @@
   <!-- MODAL: Nova Categoria -->
   <div id="modal-nova-categoria" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
     <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md relative">
+      <button type="button" id="btn-fechar-nova-categoria" class="absolute top-2 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
       <h2 class="text-xl font-semibold mb-4">Nova Categoria</h2>
       <form id="form-nova-categoria" class="space-y-4">
-        <input type="text" id="nova-categoria-nome" placeholder="Nome da Categoria" class="w-full border rounded px-3 py-2" required />
+        <div>
+          <input
+            type="text"
+            id="nova-categoria-nome"
+            placeholder="Nome da Categoria"
+            class="w-full border rounded px-3 py-2"
+            required
+          />
+        </div>
         <div class="flex justify-end gap-2 pt-4">
-          <button type="button" class="btn-cancelar-categoria bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
+          <button type="button" id="btn-cancelar-nova-categoria" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
         </div>
       </form>
@@ -247,6 +258,5 @@
   <script type="module" src="assets/js/includes.js"></script>
   <script type="module" src="assets/js/dashboard.js"></script>
   <script type="module" src="assets/js/google.js"></script>
-  
 </body>
 </html>

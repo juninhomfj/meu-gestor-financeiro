@@ -58,3 +58,71 @@ footer,
   background: var(--footer-bg) !important;
   color: var(--text) !important;
 }
+
+/* Ajustes para contraste em tabelas e textos no tema escuro */
+[data-theme="dark"] table,
+[data-theme="darkblue"] table {
+  color: var(--text) !important;
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] table th,
+[data-theme="darkblue"] table th {
+  background-color: #2a2a35 !important;
+  color: var(--primary) !important;
+  border-color: #555 !important;
+}
+
+[data-theme="dark"] table td,
+[data-theme="darkblue"] table td {
+  background-color: #1f1f28 !important;
+  border-color: #333 !important;
+}
+
+[data-theme="dark"] table tbody tr:nth-child(even),
+[data-theme="darkblue"] table tbody tr:nth-child(even) {
+  background-color: #292933 !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="darkblue"] input,
+[data-theme="dark"] select,
+[data-theme="darkblue"] select {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] button,
+[data-theme="darkblue"] button {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .btn,
+[data-theme="darkblue"] .btn {
+  background-color: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+[data-theme="dark"] .btn:hover,
+[data-theme="darkblue"] .btn:hover {
+  background-color: #1e40af !important;
+}
+
+/* Scrollbar para dark mode (opcional, melhora UX) */
+[data-theme="dark"] ::-webkit-scrollbar,
+[data-theme="darkblue"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track,
+[data-theme="darkblue"] ::-webkit-scrollbar-track {
+  background: #1f1f28;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb,
+[data-theme="darkblue"] ::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 4px;
+  border: 2px solid #1f1f28;
+}
