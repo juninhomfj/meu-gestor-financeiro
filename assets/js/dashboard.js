@@ -3,8 +3,40 @@ import {
   db, collection, addDoc, getDocs, query, orderBy, limit,
   doc, getDoc, setDoc, deleteDoc
 } from "./firebase.js";
+import { ThemeManager } from './themeManager.js';
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Inicializa o gerenciador de temas
+  const themeManager = new ThemeManager();
+  
+  // Configura listeners para os controles do header
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => themeManager.toggleTheme());
+  }
+
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+      modal.show();
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await firebase.auth().signOut();
+        window.location.href = '/login.html';
+      } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        showAlert('error', 'Não foi possível fazer logout');
+      }
+    });
+  }
+
+  // Variáveis de estado do dashboard
   let tiposContas = {};
   let filtroAtual = "todos";
   let editandoId = null;
@@ -25,9 +57,14 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.remove("bg-blue-700", "text-white");
       btn.classList.add("bg-gray-300", "text-gray-800");
     });
-    if (filtroAtual === "todos") btnFiltroTodos.classList.add("bg-blue-700", "text-white");
-    else if (filtroAtual === "pf") btnFiltroPF.classList.add("bg-blue-700", "text-white");
-    else if (filtroAtual === "pj") btnFiltroPJ.classList.add("bg-blue-700", "text-white");
+    
+    if (filtroAtual === "todos") {
+      btnFiltroTodos.classList.add("bg-blue-700", "text-white");
+    } else if (filtroAtual === "pf") {
+      btnFiltroPF.classList.add("bg-blue-700", "text-white");
+    } else if (filtroAtual === "pj") {
+      btnFiltroPJ.classList.add("bg-blue-700", "text-white");
+    }
   }
 
   // Carregar contas e popular o objeto tiposContas
@@ -70,12 +107,13 @@ document.addEventListener("DOMContentLoaded", () => {
         selectConta.appendChild(option);
       }
     });
+    
     if (!selectConta.children.length) {
       selectConta.innerHTML = `<option value="">Nenhuma conta disponível</option>`;
     }
   }
 
-  // Carregar categorias (igual ao seu código original)
+  // Carregar categorias
   async function carregarCategorias(tipoLancamento = null) {
     selectCategoria.innerHTML = "";
     try {
@@ -95,24 +133,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function preencherCategorias(categorias, tipoLancamento) {
     selectCategoria.innerHTML = "";
     categorias.forEach(cat => {
-      if (
-        !tipoLancamento ||
-        cat.tipo === "ambos" ||
-        cat.tipo === tipoLancamento ||
-        !cat.tipo
-      ) {
+      if (!tipoLancamento || cat.tipo === "ambos" || cat.tipo === tipoLancamento || !cat.tipo) {
         const option = document.createElement("option");
         option.value = cat.nome;
         option.textContent = cat.nome;
         selectCategoria.appendChild(option);
       }
     });
+    
     if (!selectCategoria.children.length) {
       selectCategoria.innerHTML = `<option value="">Nenhuma categoria disponível</option>`;
     }
   }
 
-  // Carrega lançamentos filtrando depois que contas já carregaram (importante!)
+  // Carrega lançamentos filtrando depois que contas já carregaram
   async function carregarLancamentos() {
     listaLancamentosEl.innerHTML = "";
     try {
@@ -153,10 +187,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function preencherTabelaLancamentos(lancamentos) {
     listaLancamentosEl.innerHTML = "";
+    
     if (!lancamentos.length) {
       listaLancamentosEl.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">Nenhum lançamento encontrado</td></tr>`;
       return;
     }
+    
     lancamentos.forEach(lan => {
       const tr = document.createElement("tr");
       tr.classList.add("border-b");
@@ -179,7 +215,41 @@ document.addEventListener("DOMContentLoaded", () => {
       listaLancamentosEl.appendChild(tr);
     });
 
-    // Listeners para editar e excluir (pode continuar igual)
+    // Adiciona listeners para os botões de editar/excluir
+    document.querySelectorAll('.editar-lancamento').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        editandoId = e.target.dataset.id;
+        // Implementar lógica de edição aqui
+      });
+    });
+
+    document.querySelectorAll('.excluir-lancamento').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        if (confirm('Tem certeza que deseja excluir este lançamento?')) {
+          try {
+            await deleteDoc(doc(db, "lancamentos", id));
+            await carregarLancamentos();
+            showAlert('success', 'Lançamento excluído com sucesso');
+          } catch (error) {
+            console.error('Erro ao excluir lançamento:', error);
+            showAlert('error', 'Não foi possível excluir o lançamento');
+          }
+        }
+      });
+    });
+  }
+
+  // Função auxiliar para exibir alertas
+  function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} fixed top-4 right-4 max-w-xs z-50`;
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 3000);
   }
 
   // Eventos filtros
@@ -188,11 +258,13 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarBotaoFiltro();
     carregarLancamentos();
   });
+  
   btnFiltroPF.addEventListener("click", () => {
     filtroAtual = "pf";
     atualizarBotaoFiltro();
     carregarLancamentos();
   });
+  
   btnFiltroPJ.addEventListener("click", () => {
     filtroAtual = "pj";
     atualizarBotaoFiltro();
@@ -201,5 +273,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializa a UI
   atualizarBotaoFiltro();
-  carregarLancamentos();
+  await carregarLancamentos();
 });
